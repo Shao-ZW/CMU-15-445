@@ -46,7 +46,14 @@ class StringExpression : public AbstractExpression {
 
   auto Compute(const std::string &val) const -> std::string {
     // TODO(student): implement upper / lower.
-    return {};
+    std::string res = val;
+    if (expr_type_ == StringExpressionType::Lower) {
+      std::transform(res.begin(), res.end(), res.begin(), [](unsigned char ch) { return std::tolower(ch); });
+    } else if (expr_type_ == StringExpressionType::Upper) {
+      std::transform(res.begin(), res.end(), res.begin(), [](unsigned char ch) { return std::toupper(ch); });
+    }
+
+    return res;
   }
 
   auto Evaluate(const Tuple *tuple, const Schema &schema) const -> Value override {
