@@ -85,6 +85,9 @@ class BufferPoolManager {
    */
   auto NewPageGuarded(page_id_t *page_id) -> BasicPageGuard;
 
+  auto NewPageRead(page_id_t *page_id) -> ReadPageGuard;
+  auto NewPageWrite(page_id_t *page_id) -> WritePageGuard;
+
   /**
    * TODO(P1): Add implementation
    *

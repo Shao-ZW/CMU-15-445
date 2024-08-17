@@ -12,6 +12,7 @@
 
 #include "buffer/buffer_pool_manager.h"
 
+#include "common/config.h"
 #include "common/exception.h"
 #include "common/macros.h"
 #include "storage/page/page.h"
@@ -189,5 +190,17 @@ auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
 }
 
 auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { return {this, NewPage(page_id)}; }
+
+auto BufferPoolManager::NewPageRead(page_id_t *page_id) -> ReadPageGuard {
+  Page *page = NewPage(page_id);
+  page->RLatch();
+  return {this, page};
+}
+
+auto BufferPoolManager::NewPageWrite(page_id_t *page_id) -> WritePageGuard {
+  Page *page = NewPage(page_id);
+  page->WLatch();
+  return {this, page};
+}
 
 }  // namespace bustub
