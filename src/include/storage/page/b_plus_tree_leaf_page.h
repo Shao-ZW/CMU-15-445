@@ -14,13 +14,14 @@
 #include <utility>
 #include <vector>
 
+#include "common/config.h"
 #include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
 
 #define B_PLUS_TREE_LEAF_PAGE_TYPE BPlusTreeLeafPage<KeyType, ValueType, KeyComparator>
 #define LEAF_PAGE_HEADER_SIZE 16
-#define LEAF_PAGE_SIZE ((BUSTUB_PAGE_SIZE - LEAF_PAGE_HEADER_SIZE) / sizeof(MappingType))
+#define LEAF_PAGE_SIZE ((BUSTUB_PAGE_SIZE - LEAF_PAGE_HEADER_SIZE) / sizeof(MappingType) - 1)
 
 /**
  * Store indexed key and record id(record id = page id combined with slot id,
@@ -58,6 +59,15 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   auto GetNextPageId() const -> page_id_t;
   void SetNextPageId(page_id_t next_page_id);
   auto KeyAt(int index) const -> KeyType;
+  auto ValueAt(int index) const -> ValueType;
+  auto GetKV(int index) const -> const MappingType &;
+  auto KeyIndex(const KeyType &key, const KeyComparator &compare) const -> int;
+  void PushFront(const KeyType &key, const ValueType &value);
+  void PushBack(const KeyType &key, const ValueType &value);
+  void Move(int begin_index, int end_index, BPlusTreeLeafPage *dst, int dst_index);
+  void Insert(const KeyType &key, const ValueType &value, const KeyComparator &compare);
+  void Delete(const KeyType &key, const KeyComparator &compare);
+  void Delete(int index);
 
   /**
    * @brief for test only return a string representing all keys in

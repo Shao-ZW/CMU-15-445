@@ -11,6 +11,7 @@ class BPlusTreeHeaderPage {
   BPlusTreeHeaderPage(const BPlusTreeHeaderPage &other) = delete;
 
   page_id_t root_page_id_;
+  bool is_empty_;
 };
 
 }  // namespace bustub

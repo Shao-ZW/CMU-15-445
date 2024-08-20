@@ -13,13 +13,15 @@
 #include <queue>
 #include <string>
 
+#include "common/config.h"
 #include "storage/page/b_plus_tree_page.h"
+#include "storage/page/page.h"
 
 namespace bustub {
 
 #define B_PLUS_TREE_INTERNAL_PAGE_TYPE BPlusTreeInternalPage<KeyType, ValueType, KeyComparator>
 #define INTERNAL_PAGE_HEADER_SIZE 12
-#define INTERNAL_PAGE_SIZE ((BUSTUB_PAGE_SIZE - INTERNAL_PAGE_HEADER_SIZE) / (sizeof(MappingType)))
+#define INTERNAL_PAGE_SIZE ((BUSTUB_PAGE_SIZE - INTERNAL_PAGE_HEADER_SIZE) / (sizeof(MappingType)) - 1)
 /**
  * Store n indexed keys and n+1 child pointers (page_id) within internal page.
  * Pointer PAGE_ID(i) points to a subtree in which all keys K satisfy:
@@ -60,11 +62,13 @@ class BPlusTreeInternalPage : public BPlusTreePage {
    */
   void SetKeyAt(int index, const KeyType &key);
 
+  void SetValueAt(int index, const ValueType &value);
+
   /**
    *
-   * @param value the value to search for
+   * @param key the key to search for
    */
-  auto ValueIndex(const ValueType &value) const -> int;
+  auto KeyIndex(const KeyType &key, const KeyComparator &compare) const -> int;
 
   /**
    *
@@ -72,6 +76,12 @@ class BPlusTreeInternalPage : public BPlusTreePage {
    * @return the value at the index
    */
   auto ValueAt(int index) const -> ValueType;
+
+  void Move(int begin_index, int end_index, BPlusTreeInternalPage *dst, int dst_index);
+  void PushFront(const KeyType &key, const ValueType &value);
+  void PushBack(const KeyType &key, const ValueType &value);
+  void Insert(const KeyType &key, const ValueType &value, const KeyComparator &compare);
+  void Delete(int index);
 
   /**
    * @brief For test only, return a string representing all keys in

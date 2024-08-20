@@ -82,7 +82,7 @@ class BPlusTree {
   auto GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *txn = nullptr) -> bool;
 
   // Return the page id of the root node
-  auto GetRootPageId() -> page_id_t;
+  auto GetRootPageId() const -> page_id_t;
 
   // Index iterator
   auto Begin() -> INDEXITERATOR_TYPE;
@@ -122,6 +122,18 @@ class BPlusTree {
 
   void PrintTree(page_id_t page_id, const BPlusTreePage *page);
 
+  auto ReadTraverseToLeaf(const KeyType &key, Context &ctx, bool &key_in_leaf, BPlusOpType type) const -> page_id_t;
+  auto WriteTraverseToLeaf(const KeyType &key, Context &ctx, bool &key_in_leaf, BPlusOpType type) const -> page_id_t;
+
+  void Split(InternalPage *parent_page, LeafPage *leaf_page);
+  void Split(InternalPage *parent_page, InternalPage *internal_page);
+  void Merge(InternalPage *parent_page, LeafPage *lchild_page, LeafPage *rchild_page, int modify_index);
+  void Merge(InternalPage *parent_page, InternalPage *lchild_page, InternalPage *rchild_page, int modify_index);
+  void Redistribute(InternalPage *parent_page, LeafPage *lchild_page, LeafPage *rchild_page, int modify_index);
+  void Redistribute(InternalPage *parent_page, InternalPage *lchild_page, InternalPage *rchild_page, int modify_index);
+
+  template <typename PageType>
+  void RootSplit(PageType *old_root_page, page_id_t old_root_page_id, Context &ctx);
   /**
    * @brief Convert A B+ tree into a Printable B+ tree
    *

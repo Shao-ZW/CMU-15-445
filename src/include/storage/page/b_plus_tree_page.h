@@ -38,6 +38,8 @@ enum class IndexPageType { INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE };
  * | PageType (4) | CurrentSize (4) | MaxSize (4) |
  * ----------------------------------------------------------------------------
  */
+
+enum class BPlusOpType { Find = 0, Insert, Delete };
 class BPlusTreePage {
  public:
   // Delete all constructor / destructor to ensure memory safety
@@ -55,6 +57,10 @@ class BPlusTreePage {
   auto GetMaxSize() const -> int;
   void SetMaxSize(int max_size);
   auto GetMinSize() const -> int;
+
+  auto IsOverFlow() const -> bool;
+  auto IsUnderFlow() const -> bool;
+  auto IsSafe(BPlusOpType type) const -> bool;
 
  private:
   // member variable, attributes that both internal and leaf page share
