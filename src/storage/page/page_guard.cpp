@@ -38,7 +38,7 @@ BasicPageGuard::~BasicPageGuard() {
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept { guard_ = std::move(that.guard_); }
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
-  if (guard_.page_ != nullptr) {
+  if (guard_.bpm_ != nullptr) {
     guard_.page_->RUnlatch();
   }
 
@@ -62,7 +62,7 @@ ReadPageGuard::~ReadPageGuard() {
 WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept { guard_ = std::move(that.guard_); }
 
 auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
-  if (guard_.page_ != nullptr) {
+  if (guard_.bpm_ != nullptr) {
     guard_.page_->WUnlatch();
   }
 
