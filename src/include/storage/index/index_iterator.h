@@ -48,7 +48,7 @@ class IndexIterator {
  private:
   BufferPoolManager *bpm_{nullptr};
   page_id_t leaf_page_id_{INVALID_PAGE_ID};
-  int index_{-1};
+  int index_{0};
 };
 
 }  // namespace bustub
