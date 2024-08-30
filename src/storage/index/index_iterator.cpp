@@ -17,7 +17,7 @@ INDEXITERATOR_TYPE::IndexIterator(BufferPoolManager *bpm, page_id_t leaf_page_id
     : bpm_(bpm), leaf_page_id_(leaf_page_id), index_(index) {}
 
 INDEX_TEMPLATE_ARGUMENTS
-auto INDEXITERATOR_TYPE::IsEnd() -> bool { return leaf_page_id_ == INVALID_PAGE_ID && index_ == 0; }
+auto INDEXITERATOR_TYPE::IsEnd() -> bool { return leaf_page_id_ == INVALID_PAGE_ID; }
 
 INDEX_TEMPLATE_ARGUMENTS
 auto INDEXITERATOR_TYPE::operator*() -> const MappingType & {

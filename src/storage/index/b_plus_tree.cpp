@@ -280,7 +280,6 @@ auto BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
  */
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transaction *txn) -> bool {
-  // std::cout << "Insert" << ' ' << key << std::endl;
   // try optimistically first (wish only modify leaf node)
   {
     Context ctx;
@@ -370,8 +369,6 @@ auto BPLUSTREE_TYPE::Insert(const KeyType &key, const ValueType &value, Transact
  */
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *txn) {
-  // std::cout << "Remove" << ' ' << key << std::endl;
-
   // try optimistically first (wish only modify leaf node)
   {
     Context ctx;
@@ -513,7 +510,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *txn) {
 INDEX_TEMPLATE_ARGUMENTS
 auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
   page_id_t leaf_page_id = INVALID_PAGE_ID;
-  int index = -1;
+  int index = 0;
 
   if (!IsEmpty()) {
     auto page_rguard = bpm_->FetchPageRead(header_page_id_);
@@ -528,7 +525,6 @@ auto BPLUSTREE_TYPE::Begin() -> INDEXITERATOR_TYPE {
     }
 
     leaf_page_id = curr_page_id;
-    index = 0;
   }
 
   return INDEXITERATOR_TYPE(bpm_, leaf_page_id, index);
@@ -544,7 +540,7 @@ auto BPLUSTREE_TYPE::Begin(const KeyType &key) -> INDEXITERATOR_TYPE {
   Context ctx;
   bool key_in_leaf;
   page_id_t leaf_page_id = ReadTraverseToLeaf(key, ctx, key_in_leaf, BPlusOpType::Find);
-  int index = -1;
+  int index = 0;
 
   if (leaf_page_id != INVALID_PAGE_ID && key_in_leaf) {
     auto &leaf_page_rguard = ctx.read_set_.back();
