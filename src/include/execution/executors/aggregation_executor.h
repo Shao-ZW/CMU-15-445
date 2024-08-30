@@ -24,6 +24,7 @@
 #include "execution/expressions/abstract_expression.h"
 #include "execution/plans/aggregation_plan.h"
 #include "storage/table/tuple.h"
+#include "type/type.h"
 #include "type/value_factory.h"
 
 namespace bustub {
@@ -74,13 +75,39 @@ class SimpleAggregationHashTable {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
       switch (agg_types_[i]) {
         case AggregationType::CountStarAggregate:
+          result->aggregates_[i] = result->aggregates_[i].Add(ValueFactory::GetIntegerValue(1));
+          break;
         case AggregationType::CountAggregate:
+          result->aggregates_[i] = result->aggregates_[i].IsNull()
+                                       ? ValueFactory::GetIntegerValue(static_cast<int>(!input.aggregates_[i].IsNull()))
+                                       : result->aggregates_[i].Add(ValueFactory::GetIntegerValue(
+                                             static_cast<int>(!input.aggregates_[i].IsNull())));
+          break;
         case AggregationType::SumAggregate:
+          if (!input.aggregates_[i].IsNull()) {
+            result->aggregates_[i] = result->aggregates_[i].IsNull() ? input.aggregates_[i]
+                                                                     : result->aggregates_[i].Add(input.aggregates_[i]);
+          }
+          break;
         case AggregationType::MinAggregate:
+          if (!input.aggregates_[i].IsNull()) {
+            result->aggregates_[i] = result->aggregates_[i].IsNull() ? input.aggregates_[i]
+                                                                     : result->aggregates_[i].Min(input.aggregates_[i]);
+          }
+          break;
         case AggregationType::MaxAggregate:
+          if (!input.aggregates_[i].IsNull()) {
+            result->aggregates_[i] = result->aggregates_[i].IsNull() ? input.aggregates_[i]
+                                                                     : result->aggregates_[i].Max(input.aggregates_[i]);
+          }
           break;
       }
     }
+  }
+
+  void InsertEmpty() {
+    AggregateKey empty_key;
+    ht_.insert({empty_key, GenerateInitialAggregateValue()});
   }
 
   /**
@@ -201,8 +228,8 @@ class AggregationExecutor : public AbstractExecutor {
   /** The child executor that produces tuples over which the aggregation is computed */
   std::unique_ptr<AbstractExecutor> child_;
   /** Simple aggregation hash table */
-  // TODO(Student): Uncomment SimpleAggregationHashTable aht_;
+  SimpleAggregationHashTable aht_;
   /** Simple aggregation hash table iterator */
-  // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
+  std::shared_ptr<SimpleAggregationHashTable::Iterator> aht_iterator_;
 };
 }  // namespace bustub
