@@ -38,7 +38,12 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   int delete_cnt = 0;
 
   while (child_executor_->Next(&child_tuple, &child_rid)) {
-    table_info_->table_->UpdateTupleMeta({INVALID_TXN_ID, INVALID_TXN_ID, true}, child_rid);
+    auto table_record = TableWriteRecord(table_info_->oid_, child_rid, table_info_->table_.get());
+    table_record.wtype_ = WType::DELETE;
+    exec_ctx_->GetTransaction()->AppendTableWriteRecord(table_record);
+
+    table_info_->table_->UpdateTupleMeta({INVALID_TXN_ID, exec_ctx_->GetTransaction()->GetTransactionId(), true},
+                                         child_rid);
     delete_cnt++;
 
     auto index_vec = catalog_->GetTableIndexes(table_info_->name_);

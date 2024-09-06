@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "catalog/catalog.h"
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/plans/seq_scan_plan.h"
@@ -53,5 +54,6 @@ class SeqScanExecutor : public AbstractExecutor {
   /** The sequential scan plan node to be executed */
   const SeqScanPlanNode *plan_;
   std::shared_ptr<TableIterator> table_iterator_;
+  TableInfo *table_info_;
 };
 }  // namespace bustub

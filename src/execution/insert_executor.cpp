@@ -30,6 +30,14 @@ void InsertExecutor::Init() {
   catalog_ = exec_ctx_->GetCatalog();
   table_info_ = catalog_->GetTable(plan_->TableOid());
   is_end_ = false;
+  try {
+    if (!exec_ctx_->GetLockManager()->LockTable(exec_ctx_->GetTransaction(), LockManager::LockMode::INTENTION_EXCLUSIVE,
+                                                plan_->TableOid())) {
+      throw ExecutionException("Insert Executor Get Table Lock Failed");
+    }
+  } catch (TransactionAbortException &except) {
+    throw ExecutionException("Insert Executor Get Table Lock Failed");
+  }
 }
 
 auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
@@ -41,8 +49,23 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   int insert_cnt = 0;
 
   while (child_executor_->Next(&child_tuple, rid)) {
-    auto child_rid = table_info_->table_->InsertTuple({INVALID_TXN_ID, INVALID_TXN_ID, false}, child_tuple);
+    auto child_rid = table_info_->table_->InsertTuple(
+        {exec_ctx_->GetTransaction()->GetTransactionId(), INVALID_TXN_ID, false}, child_tuple,
+        exec_ctx_->GetLockManager(), exec_ctx_->GetTransaction(), plan_->TableOid());
     if (child_rid != std::nullopt) {
+      try {
+        if (!exec_ctx_->GetLockManager()->LockRow(exec_ctx_->GetTransaction(), LockManager::LockMode::EXCLUSIVE,
+                                                  table_info_->oid_, *child_rid)) {
+          throw ExecutionException("Insert Executor Get Row Lock Failed");
+        }
+      } catch (TransactionAbortException &except) {
+        throw ExecutionException("Insert Executor Get Row Lock Failed");
+      }
+
+      auto table_record = TableWriteRecord(table_info_->oid_, child_rid.value(), table_info_->table_.get());
+      table_record.wtype_ = WType::INSERT;
+      exec_ctx_->GetTransaction()->AppendTableWriteRecord(table_record);
+
       insert_cnt++;
       auto index_vec = catalog_->GetTableIndexes(table_info_->name_);
       for (auto index : index_vec) {

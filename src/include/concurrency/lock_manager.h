@@ -17,6 +17,7 @@
 #include <list>
 #include <memory>
 #include <mutex>  // NOLINT
+#include <shared_mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -37,7 +38,7 @@ class TransactionManager;
 class LockManager {
  public:
   enum class LockMode { SHARED, EXCLUSIVE, INTENTION_SHARED, INTENTION_EXCLUSIVE, SHARED_INTENTION_EXCLUSIVE };
-
+  enum class LockObject { TABLE, ROW };
   /**
    * Structure to hold a lock request.
    * This could be a lock request on a table OR a row.
@@ -65,7 +66,8 @@ class LockManager {
   class LockRequestQueue {
    public:
     /** List of lock requests for the same resource (table or row) */
-    std::list<LockRequest *> request_queue_;
+    std::list<std::shared_ptr<LockRequest>> request_queue_;
+    std::list<std::shared_ptr<LockRequest>> granted_queue_;
     /** For notifying blocked transactions on this rid */
     std::condition_variable cv_;
     /** txn_id of an upgrading transaction (if any) */
@@ -312,13 +314,19 @@ class LockManager {
  private:
   /** Spring 2023 */
   /* You are allowed to modify all functions below. */
-  auto UpgradeLockTable(Transaction *txn, LockMode lock_mode, const table_oid_t &oid) -> bool;
-  auto UpgradeLockRow(Transaction *txn, LockMode lock_mode, const table_oid_t &oid, const RID &rid) -> bool;
+  void UpdateTransactionTableInfo(Transaction *txn, const table_oid_t &oid, LockMode lock_mode, int type);
+  void UpdateTransactionRowInfo(Transaction *txn, const table_oid_t &oid, const RID &rid, LockMode lock_mode, int type);
+  auto TryUpgradeLock(std::shared_ptr<LockRequestQueue> &lock_request_queue, Transaction *txn, LockMode lock_mode,
+                      LockObject object) -> std::pair<bool, bool>;
   auto AreLocksCompatible(LockMode l1, LockMode l2) -> bool;
-  auto CanTxnTakeLock(Transaction *txn, LockMode lock_mode) -> bool;
-  void GrantNewLocksIfPossible(LockRequestQueue *lock_request_queue);
-  auto CanLockUpgrade(LockMode curr_lock_mode, LockMode requested_lock_mode) -> bool;
+  auto CanTxnTakeLock(Transaction *txn, LockMode lock_mode, LockObject object) -> bool;
+  auto TryGrantLocks(std::shared_ptr<LockRequestQueue> &lock_request_queue) -> bool;
+  auto CanLockUpgrade(Transaction *txn, LockMode curr_lock_mode, LockMode requested_lock_mode) -> bool;
   auto CheckAppropriateLockOnTable(Transaction *txn, const table_oid_t &oid, LockMode row_lock_mode) -> bool;
+  auto CanTxnFreeTableLock(Transaction *txn, const table_oid_t &oid) -> bool;
+  auto CanTxnFreeRowLock(Transaction *txn, const table_oid_t &oid, const RID &rid) -> bool;
+  void UpdateTransactionState(Transaction *txn, LockMode lock_mode);
+
   auto FindCycle(txn_id_t source_txn, std::vector<txn_id_t> &path, std::unordered_set<txn_id_t> &on_path,
                  std::unordered_set<txn_id_t> &visited, txn_id_t *abort_txn_id) -> bool;
   void UnlockAll();
@@ -337,6 +345,9 @@ class LockManager {
   std::thread *cycle_detection_thread_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+  std::unordered_map<txn_id_t, table_oid_t> txn_table_map_;
+  std::unordered_map<txn_id_t, RID> txn_row_map_;
+
   std::mutex waits_for_latch_;
 };
 
